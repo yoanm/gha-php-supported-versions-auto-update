@@ -11,7 +11,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-    if: github.event.pull_request.user.login == 'dependabot[bot]' && github.repository == 'yoanm/gha-supported-versions-parser'
+    if: github.event.pull_request.user.login == 'dependabot[bot]' && github.repository == 'yoanm/gha-php-supported-versions-auto-update'
     steps:
       - name: Dependabot metadata
         id: metadata

@@ -1,8 +1,8 @@
 name: PHP Supported versions auto-update
 description: |
-  Parses supported versions file
+  Fetch latest and nightly versions from `yoanm/php-versions` and update php dependency versions for the given supported version file
 branding:
-  icon: search
+  icon: edit-2
   color: green
 
 inputs:
