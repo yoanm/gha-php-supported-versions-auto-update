@@ -68,6 +68,7 @@ runs:
         echo "nightly=${NIGHTLY}" >> $GITHUB_OUTPUT
 
     - name: Update max version
+      id: update-max-version
       if: ${{ steps.fetch-php-supported-versions.outputs.max != steps.fetch-php-new-versions.outputs.latest }}
       uses: yoanm/gha-supported-versions-parser/updater@yoanm-patch-1 # @TODO - Move to v1 !!!
       with:
@@ -77,6 +78,7 @@ runs:
         value: ${{ steps.fetch-php-new-versions.outputs.latest }}
 
     - name: Update nightly version
+      id: update-nightly-version
       if: ${{ steps.fetch-php-supported-versions.outputs.next != steps.fetch-php-new-versions.outputs.nightly }}
       uses: yoanm/gha-supported-versions-parser/updater@yoanm-patch-1 # @TODO - Move to v1 !!!
       with:
@@ -84,3 +86,13 @@ runs:
         dependency: php
         version: next
         value: ${{ steps.fetch-php-new-versions.outputs.nightly }}
+
+
+    - name: DEBUG # @TODO - !! TO REMOVE BEFORE COMMIT !!
+      shell: bash
+      env:
+        TEST_1: ${{ toJson(steps.update-max-version) }}
+        TEST_2: ${{ toJson(steps.update-nightly-version) }}
+      run: |
+        echo $TEST_1
+        echo $TEST_2
