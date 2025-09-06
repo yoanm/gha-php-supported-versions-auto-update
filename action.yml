@@ -59,6 +59,7 @@ runs:
       working-directory: 'php-versions-repo'
       shell: bash
       run: |
+        # 🕵️ Find latest supported version and nightly version
         LATEST=$(bin/fetch_latest_supported_version.sh)
         echo "Latest supported version: ${LATEST}"
         echo "latest=${LATEST}" >> $GITHUB_OUTPUT
