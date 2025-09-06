@@ -13,7 +13,7 @@ inputs:
 outputs:
   updated:
     description: Whether some version have been updated or not
-    value: ${{ steps.parse-versions.outputs.min }}
+    value: ${{ steps.update-max-version.conclusion == 'success' || steps.update-nightly-version.conclusion == 'success' }}
   max-updated:
     description: Whether `max` version has been updated or not
     value: ${{ steps.update-max-version.conclusion == 'success' }}
