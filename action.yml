@@ -1,0 +1,89 @@
+name: PHP Supported versions auto-update
+description: |
+  Fetch latest and nightly versions from `yoanm/php-versions` and update php dependency versions for the given supported version file
+branding:
+  icon: edit-2
+  color: green
+
+inputs:
+  path:
+    description: Path to the supported versions file
+    required: true
+
+outputs:
+  updated:
+    description: Whether some version have been updated or not
+    value: ${{ (steps.update-max-version.conclusion == 'success' || steps.update-nightly-version.conclusion == 'success') && 1 || 0 }}
+  max-updated:
+    description: Whether `max` version has been updated or not
+    value: ${{ steps.update-max-version.conclusion == 'success' && 1 || 0 }}
+  next-updated:
+    description: Whether `next` version has been updated or not
+    value: ${{ steps.update-nightly-version.conclusion == 'success' && 1 || 0 }}
+
+runs:
+  using: composite
+  steps:
+    # Even if an input is marked as "required", empty/no value may be passed !
+    - shell: bash
+      run: |
+        # 🔎 Validate provided inputs ...
+
+        if [[ -z "${{ inputs.path }}" ]]; then
+          echo '::error::You must provide a path !'
+          exit 1
+        elif [[ ! -f "${{ inputs.path }}" ]]; then
+          echo '::error::Provided file doesn'"'"'t exist !'
+          exit 1
+        elif [[ ! -r "${{ inputs.path }}" ]]; then
+          echo '::error::Provided file is not readable !'
+          exit 1
+        fi
+
+    - name: Fetch PHP currently supported versions
+      id: fetch-php-supported-versions
+      uses: yoanm/gha-supported-versions-parser@v1
+      with:
+        path: ${{ inputs.path }}
+        dependency: php
+        with-summary: false
+
+    - name: "Checkout yoanm/php-versions"
+      uses: actions/checkout@v5
+      with:
+        repository: 'yoanm/php-versions'
+        path: 'php-versions-repo'
+
+    - name: Find latest supported version and nightly version
+      id: fetch-php-new-versions
+      working-directory: 'php-versions-repo'
+      shell: bash
+      run: |
+        # 🕵️ Find latest supported version and nightly version
+        LATEST=$(bin/fetch_latest_supported_version.sh)
+        echo "Latest supported version: ${LATEST}"
+        echo "latest=${LATEST}" >> $GITHUB_OUTPUT
+        
+        NIGHTLY=$(bin/fetch_nightly_version.sh)
+        echo "Nightly version: ${NIGHTLY}"
+        echo "nightly=${NIGHTLY}" >> $GITHUB_OUTPUT
+
+    - name: Update max version
+      id: update-max-version
+      if: ${{ steps.fetch-php-supported-versions.outputs.max != steps.fetch-php-new-versions.outputs.latest }}
+      uses: yoanm/gha-supported-versions-parser/updater@v1
+      with:
+        path: ${{ inputs.path }}
+        dependency: php
+        version: max
+        value: ${{ steps.fetch-php-new-versions.outputs.latest }}
+
+    - name: Update nightly version
+      id: update-nightly-version
+      if: ${{ steps.fetch-php-supported-versions.outputs.next != steps.fetch-php-new-versions.outputs.nightly }}
+      uses: yoanm/gha-supported-versions-parser/updater@v1
+      with:
+        path: ${{ inputs.path }}
+        dependency: php
+        version: next
+        value: ${{ steps.fetch-php-new-versions.outputs.nightly }}
