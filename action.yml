@@ -71,7 +71,7 @@ runs:
     - name: Update max version
       id: update-max-version
       if: ${{ steps.fetch-php-supported-versions.outputs.max != steps.fetch-php-new-versions.outputs.latest }}
-      uses: yoanm/gha-supported-versions-parser/updater@yoanm-patch-1 # @TODO - Move to v1 !!!
+      uses: yoanm/gha-supported-versions-parser/updater@v1
       with:
         path: ${{ inputs.path }}
         dependency: php
@@ -81,7 +81,7 @@ runs:
     - name: Update nightly version
       id: update-nightly-version
       if: ${{ steps.fetch-php-supported-versions.outputs.next != steps.fetch-php-new-versions.outputs.nightly }}
-      uses: yoanm/gha-supported-versions-parser/updater@yoanm-patch-1 # @TODO - Move to v1 !!!
+      uses: yoanm/gha-supported-versions-parser/updater@v1
       with:
         path: ${{ inputs.path }}
         dependency: php
