@@ -13,13 +13,13 @@ inputs:
 outputs:
   updated:
     description: Whether some version have been updated or not
-    value: ${{ steps.update-max-version.conclusion == 'success' || steps.update-nightly-version.conclusion == 'success' }}
+    value: ${{ (steps.update-max-version.conclusion == 'success' || steps.update-nightly-version.conclusion == 'success') && 1 || 0 }}
   max-updated:
     description: Whether `max` version has been updated or not
-    value: ${{ steps.update-max-version.conclusion == 'success' }}
+    value: ${{ steps.update-max-version.conclusion == 'success' && 1 || 0 }}
   next-updated:
     description: Whether `next` version has been updated or not
-    value: ${{ steps.update-nightly-version.conclusion == 'success' }}
+    value: ${{ steps.update-nightly-version.conclusion == 'success' && 1 || 0 }}
 
 runs:
   using: composite
