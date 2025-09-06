@@ -1,0 +1,171 @@
+name: 'CI'
+
+on: # Build any PRs and main branch changes
+  workflow_dispatch: # Allows to run the workflow manually from the Actions tab
+  pull_request:
+    types:
+      - opened
+      - synchronize
+  push:
+    branches: [ master ]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: "${{ github.workflow }}-${{ github.head_ref || github.ref }}"
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: Tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v5
+
+      - name: Parser - Basic test
+        id: basic-test
+        uses: ./
+        with:
+          path: tests/data/basic-test.json
+          dependency: php
+
+      - name: Validate "Parser - Basic test"
+        shell: bash
+        env:
+          ACTUAL_MIN: "${{ steps.basic-test.outputs.min }}"
+          EXPECTED_MIN: "8.0"
+          ACTUAL_MAX: "${{ steps.basic-test.outputs.max }}"
+          EXPECTED_MAX: "8.4"
+          ACTUAL_NEXT: "${{ steps.basic-test.outputs.next }}"
+          EXPECTED_NEXT: "8.5"
+        run: |
+          if [[ "$ACTUAL_MIN" != "$EXPECTED_MIN" ]]; then
+            echo "::error::Invalid min version: expected '$EXPECTED_MIN', got '$ACTUAL_MIN' !"
+            exit 1
+          elif [[ "$ACTUAL_MAX" != "$EXPECTED_MAX" ]]; then
+            echo "::error::Invalid max version: expected '$EXPECTED_MAX', got '$ACTUAL_MAX' !"
+            exit 1
+          elif [[ "$ACTUAL_NEXT" != "$EXPECTED_NEXT" ]]; then
+            echo "::error::Invalid next version: expected '$EXPECTED_NEXT', got '$ACTUAL_NEXT' !"
+            exit 1
+          fi
+
+      - name: Parser - Unknown dependency
+        id: unknown-dep-test
+        continue-on-error: true
+        uses: ./
+        with:
+          path: tests/data/basic-test.json
+          dependency: unknown-dep
+
+      - name: Validate "Parser - Unknown dependency"
+        shell: bash
+        env:
+          ACTUAL_OUTCOME: "${{ steps.unknown-dep-test.outcome }}"
+          EXPECTED_OUTCOME: "failure"
+          ACTUAL_CONCLUSION: "${{ steps.unknown-dep-test.conclusion }}"
+          EXPECTED_CONCLUSION: "success"
+          ACTUAL_OUTPUTS: "${{ toJSON(steps.unknown-dep-test.outputs) }}"
+          EXPECTED_OUTPUTS: '{"min":"","max":"","next":""}'
+        run: |
+          if [[ "$ACTUAL_OUTCOME" != "$EXPECTED_OUTCOME" ]]; then
+            echo "::error::Invalid outcome: expected '$EXPECTED_OUTCOME', got '$ACTUAL_OUTCOME' !"
+            exit 1
+          elif [[ "$ACTUAL_CONCLUSION" != "$EXPECTED_CONCLUSION" ]]; then
+            echo "::error::Invalid conclusion: expected '$EXPECTED_CONCLUSION', got '$ACTUAL_CONCLUSION' !"
+            exit 1
+          fi
+          ACTUAL_JSON=$(echo "$ACTUAL_OUTPUTS" |  jq -c "." )
+          if [[ "$ACTUAL_JSON" != "$EXPECTED_OUTPUTS" ]]; then
+            echo "::error::Invalid outputs: expected '$EXPECTED_OUTPUTS', got '$ACTUAL_JSON' !"
+            exit 1
+          fi
+
+      - name: Parser - Unknown file test
+        id: unknown-file-test
+        continue-on-error: true
+        uses: ./
+        with:
+          path: a/non/existent/file
+          dependency: php
+
+      - name: Validate "Parser - Unknown file test"
+        shell: bash
+        env:
+          ACTUAL_OUTCOME: "${{ steps.unknown-file-test.outcome }}"
+          EXPECTED_OUTCOME: "failure"
+          ACTUAL_CONCLUSION: "${{ steps.unknown-file-test.conclusion }}"
+          EXPECTED_CONCLUSION: "success"
+          ACTUAL_OUTPUTS: "${{ toJSON(steps.unknown-file-test.outputs) }}"
+          EXPECTED_OUTPUTS: '{"min":"","max":"","next":""}'
+        run: |
+          if [[ "$ACTUAL_OUTCOME" != "$EXPECTED_OUTCOME" ]]; then
+            echo "::error::Invalid outcome: expected '$EXPECTED_OUTCOME', got '$ACTUAL_OUTCOME' !"
+            exit 1
+          elif [[ "$ACTUAL_CONCLUSION" != "$EXPECTED_CONCLUSION" ]]; then
+            echo "::error::Invalid conclusion: expected '$EXPECTED_CONCLUSION', got '$ACTUAL_CONCLUSION' !"
+            exit 1
+          fi
+          ACTUAL_JSON=$(echo "$ACTUAL_OUTPUTS" |  jq -c "." )
+          if [[ "$ACTUAL_JSON" != "$EXPECTED_OUTPUTS" ]]; then
+            echo "::error::Invalid outputs: expected '$EXPECTED_OUTPUTS', got '$ACTUAL_JSON' !"
+            exit 1
+          fi
+
+      - name: Downloader - Basic test
+        id: downloader-basic-test
+        uses: ./github-downloader
+        with:
+          file-path: tests/data/basic-test.json
+
+      - name: Validate "Downloader - Basic test"
+        shell: bash
+        env:
+          ACTUAL_PATH: "${{ steps.downloader-basic-test.outputs.path }}"
+          EXPECTED_PATH: '${{ runner.temp }}/supported-versions.json'
+        run: |
+          if [[ "$ACTUAL_PATH" != "$EXPECTED_PATH" ]]; then
+            echo "::error::Invalid path: expected '$EXPECTED_PATH', got '$ACTUAL_PATH' !"
+            exit 1
+          fi
+          if [[ ! -f "$ACTUAL_PATH" ]]; then
+            echo '::error::File doesn'"'"'t exist !'
+            exit 1
+          elif [[ ! -r "$ACTUAL_PATH" ]]; then
+            echo '::error::File is not readable !'
+            exit 1
+          fi
+
+      - name: Downloader - Invalid path test
+        id: downloader-invalid-path-test
+        continue-on-error: true
+        uses: ./github-downloader
+        with:
+          file-path: a/non/existent/file
+
+      - name: Validate "Downloader - Invalid path test"
+        shell: bash
+        env:
+          ACTUAL_OUTCOME: "${{ steps.downloader-invalid-path-test.outcome }}"
+          EXPECTED_OUTCOME: "failure"
+          ACTUAL_CONCLUSION: "${{ steps.downloader-invalid-path-test.conclusion }}"
+          EXPECTED_CONCLUSION: "success"
+          ACTUAL_OUTPUTS: "${{ toJSON(steps.downloader-invalid-path-test.outputs) }}"
+          EXPECTED_OUTPUTS: '{"path":""}'
+        run: |
+          if [[ "$ACTUAL_OUTCOME" != "$EXPECTED_OUTCOME" ]]; then
+            echo "::error::Invalid outcome: expected '$EXPECTED_OUTCOME', got '$ACTUAL_OUTCOME' !"
+            exit 1
+          elif [[ "$ACTUAL_CONCLUSION" != "$EXPECTED_CONCLUSION" ]]; then
+            echo "::error::Invalid conclusion: expected '$EXPECTED_CONCLUSION', got '$ACTUAL_CONCLUSION' !"
+            exit 1
+          fi
+          ACTUAL_JSON=$(echo "$ACTUAL_OUTPUTS" |  jq -c "." )
+          if [[ "$ACTUAL_JSON" != "$EXPECTED_OUTPUTS" ]]; then
+            echo "::error::Invalid outputs: expected '$EXPECTED_OUTPUTS', got '$ACTUAL_JSON' !"
+            exit 1
+          fi
