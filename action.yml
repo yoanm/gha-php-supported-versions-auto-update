@@ -11,15 +11,15 @@ inputs:
     required: true
 
 outputs:
-  min:
-    description: Minimal version configured for the given dependency
+  updated:
+    description: Whether some version have been updated or not
     value: ${{ steps.parse-versions.outputs.min }}
-  max:
-    description: Maximal version configured for the given dependency
-    value: ${{ steps.parse-versions.outputs.max }}
-  next:
-    description: Next version configured for the given dependency
-    value: ${{ steps.parse-versions.outputs.next }}
+  max-updated:
+    description: Whether `max` version has been updated or not
+    value: ${{ steps.update-max-version.conclusion == 'success' }}
+  next-updated:
+    description: Whether `next` version has been updated or not
+    value: ${{ steps.update-nightly-version.conclusion == 'success' }}
 
 runs:
   using: composite
@@ -86,13 +86,3 @@ runs:
         dependency: php
         version: next
         value: ${{ steps.fetch-php-new-versions.outputs.nightly }}
-
-
-    - name: DEBUG # @TODO - !! TO REMOVE BEFORE COMMIT !!
-      shell: bash
-      env:
-        TEST_1: ${{ toJson(steps.update-max-version) }}
-        TEST_2: ${{ toJson(steps.update-nightly-version) }}
-      run: |
-        echo $TEST_1
-        echo $TEST_2
