@@ -24,10 +24,10 @@ jobs:
       contents: read
     steps:
       - name: Check out code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: "Checkout yoanm/php-versions"
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           repository: 'yoanm/php-versions'
           path: 'tmp-php-versions-repo'
