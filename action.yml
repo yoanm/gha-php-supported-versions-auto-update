@@ -42,7 +42,7 @@ runs:
 
     - name: Fetch PHP currently supported versions
       id: fetch-php-supported-versions
-      uses: yoanm/gha-supported-versions-parser@v1
+      uses: yoanm/gha-supported-versions-parser@feature/handle-empty-next-version
       with:
         path: ${{ inputs.path }}
         dependency: php
@@ -71,7 +71,7 @@ runs:
     - name: Update max version
       id: update-max-version
       if: ${{ steps.fetch-php-supported-versions.outputs.max != steps.fetch-php-new-versions.outputs.latest }}
-      uses: yoanm/gha-supported-versions-parser/updater@v1
+      uses: yoanm/gha-supported-versions-parser/updater@feature/handle-empty-next-version
       with:
         path: ${{ inputs.path }}
         dependency: php
@@ -81,7 +81,7 @@ runs:
     - name: Update nightly version
       id: update-nightly-version
       if: ${{ steps.fetch-php-supported-versions.outputs.next != steps.fetch-php-new-versions.outputs.nightly }}
-      uses: yoanm/gha-supported-versions-parser/updater@v1
+      uses: yoanm/gha-supported-versions-parser/updater@feature/handle-empty-next-version
       with:
         path: ${{ inputs.path }}
         dependency: php
